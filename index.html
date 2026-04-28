@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>长篇小说上下文管理</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="appShell" class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <h1>长篇小说写作台</h1>
+          <button id="sidebarToggle" class="sidebar-toggle" title="折叠侧边栏" aria-label="折叠侧边栏">‹</button>
+        </div>
+        <label class="file-drop">
+          <input id="fileInput" type="file" accept=".txt,.md,text/plain,text/markdown">
+          <span>导入 TXT / MD</span>
+          <small>导入只做本地切分，不调用 AI。</small>
+        </label>
+        <div class="sidebar-actions">
+          <button id="exportTxtButton" class="ghost">导出 TXT</button>
+          <button id="bindTxtButton" class="ghost">绑定写入 TXT</button>
+        </div>
+        <small id="fileWriteStatus" class="sidebar-note">未绑定写入文件</small>
+        <div class="stat-grid">
+          <div>
+            <strong id="chapterCount">0</strong>
+            <span>章节</span>
+          </div>
+          <div>
+            <strong id="totalChars">0</strong>
+            <span>字数</span>
+          </div>
+        </div>
+        <nav class="nav-tabs" aria-label="工作区">
+          <button class="active" data-tab="organize">导入与预览</button>
+          <button data-tab="context">续写</button>
+          <button data-tab="knowledge">知识库</button>
+          <button data-tab="settings">LLM 配置</button>
+          <button data-tab="help">使用说明</button>
+        </nav>
+      </aside>
+
+      <main>
+        <section class="toolbar">
+          <input id="projectTitle" class="title-input" value="未命名小说" aria-label="项目标题">
+        </section>
+
+        <section id="organize" class="panel active">
+          <div class="summary-band">
+            <div>
+              <h2>全书摘要</h2>
+            </div>
+            <div class="summary-actions">
+              <button id="updateSummaryButton" class="ghost">AI 更新全书摘要</button>
+              <button id="stopSummaryButton" class="danger" disabled>中断</button>
+              <span id="summaryCount">0 / 2000</span>
+            </div>
+          </div>
+          <label class="stacked">手动编辑全书摘要
+            <small>直接在这里修改，内容会自动保存。</small>
+            <textarea id="storySummary" maxlength="2000" rows="7" placeholder="描述目前故事推进到哪里、主要矛盾、当前目标、关键未解伏笔。"></textarea>
+          </label>
+          <p id="organizeStatus" class="status-line"></p>
+
+          <div class="split-layout">
+            <section>
+              <div class="section-head">
+                <h2>章节</h2>
+                <span id="splitStatus">尚未导入</span>
+              </div>
+              <div id="chapterList" class="chapter-list"></div>
+            </section>
+            <section>
+              <div class="section-head">
+                <h2>当前章节</h2>
+                <div class="button-row">
+                  <button id="draftSummaryButton" class="ghost">AI 生成章节摘要</button>
+                  <button id="stopChapterSummaryButton" class="danger" disabled>中断</button>
+                </div>
+              </div>
+              <label class="stacked">章节标题
+                <input id="chapterTitle" class="field" placeholder="章节标题">
+              </label>
+              <label class="stacked">手动编辑章节摘要
+                <small>直接在这里修改当前章节摘要，内容会自动保存。</small>
+                <textarea id="chapterSummary" rows="7" placeholder="手写章节摘要，建议 150-300 字。"></textarea>
+              </label>
+              <label class="stacked">章节正文
+                <textarea id="chapterBody" rows="16" placeholder="章节正文"></textarea>
+              </label>
+            </section>
+          </div>
+          <details class="danger-zone">
+            <summary>危险操作</summary>
+            <p>清空当前项目会删除浏览器里保存的章节、正文、摘要和生成记录，不会删除原始 TXT/MD 文件，也不会清空 LLM 配置。</p>
+            <button id="clearProjectButton" class="danger">清空当前项目</button>
+          </details>
+        </section>
+
+        <section id="knowledge" class="panel">
+          <div class="section-head">
+            <h2>知识库</h2>
+            <button id="addKnowledgeButton">新增条目</button>
+          </div>
+          <p class="status-line">可选。用于记录角色、地点、势力和世界观规则；续写时会按关键词选择相关条目进入上下文。</p>
+          <div id="knowledgeList" class="knowledge-list"></div>
+        </section>
+
+        <section id="context" class="panel">
+          <div class="split-layout write-layout">
+            <section>
+              <div class="section-head">
+                <h2>生成设置</h2>
+              </div>
+              <label class="stacked">当前章节
+                <select id="currentChapterSelect"></select>
+              </label>
+              <fieldset class="mode-box">
+                <legend>写入方式</legend>
+                <label><input type="radio" name="writeMode" value="append" checked> 在原章节续写</label>
+                <label><input type="radio" name="writeMode" value="new"> 新增一章</label>
+              </fieldset>
+              <label id="newChapterTitleWrap" class="stacked hidden">新章节标题
+                <input id="newChapterTitle" class="field" placeholder="例如：第十二章 旧城雨夜">
+              </label>
+              <label class="stacked">本次续写要求
+                <textarea id="userRequest" rows="4" placeholder="例如：从林舟发现玉佩异动开始，续写约1000字。"></textarea>
+              </label>
+              <label class="stacked">写作规则
+                <textarea id="writingRules" rows="4" placeholder="风格、视角、禁忌、节奏要求。"></textarea>
+              </label>
+              <div class="button-row">
+                <button id="generateButton">生成续写</button>
+                <button id="stopGenerationButton" class="danger" disabled>中断生成</button>
+              </div>
+              <p id="generationStatus" class="status-line"></p>
+            </section>
+            <section>
+              <div class="section-head">
+                <h2>生成结果</h2>
+                <button id="acceptGenerationButton" class="ghost">接受并追加</button>
+              </div>
+              <label class="stacked">候选正文
+                <textarea id="candidateText" rows="18" placeholder="生成结果会出现在这里，也可以手动修改后再接受。"></textarea>
+              </label>
+              <details class="advanced-context">
+                <summary>本次会发送给 LLM 的上下文</summary>
+                <div class="section-head compact-head">
+                  <h2>上下文模块</h2>
+                  <div class="button-row">
+                    <button id="buildContextButton" class="ghost">刷新上下文</button>
+                  </div>
+                </div>
+                <div id="contextPreview" class="context-preview"></div>
+                <details class="raw-prompt">
+                  <summary>查看完整 Prompt</summary>
+                  <pre id="promptPreview" class="prompt-preview"></pre>
+                </details>
+              </details>
+            </section>
+          </div>
+        </section>
+
+        <section id="settings" class="panel">
+          <div class="section-head">
+            <h2>LLM 配置</h2>
+            <button id="saveLlmConfigButton">保存配置</button>
+          </div>
+          <div class="settings-grid">
+            <label class="stacked">接口地址
+              <input id="llmBaseUrl" class="field" placeholder="https://api.openai.com/v1">
+            </label>
+            <label class="stacked">模型
+              <input id="llmModel" class="field" placeholder="deepseek-chat">
+            </label>
+            <label class="stacked">API Key
+              <input id="llmApiKey" class="field" type="password" placeholder="sk-..." autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+            </label>
+            <label class="stacked">温度
+              <input id="llmTemperature" class="field" type="number" min="0" max="2" step="0.1" value="0.8">
+            </label>
+            <label class="stacked">最大输出 Token
+              <input id="llmMaxTokens" class="field" type="number" min="256" max="8192" step="128" value="1800">
+            </label>
+            <label class="stacked">系统提示词
+              <textarea id="llmSystemPrompt" rows="5" placeholder="你是一名长篇小说续写助手，严格保持人物、设定、视角和文风一致。"></textarea>
+            </label>
+          </div>
+          <p class="status-line">配置保存在当前浏览器本地。浏览器直连第三方接口时，接口服务需要允许跨域请求；桌面版通常不受这个限制。</p>
+        </section>
+
+        <section id="help" class="panel">
+          <div class="section-head">
+            <h2>使用说明</h2>
+          </div>
+          <div class="help-doc">
+            <section>
+              <h3>最短流程</h3>
+              <ol>
+                <li>到 <strong>LLM 配置</strong> 填接口地址、模型和 API Key。</li>
+                <li>到 <strong>导入与预览</strong> 导入 TXT/MD，并先填写一版全书摘要。</li>
+                <li>到 <strong>续写</strong> 选择章节，写续写要求，点击生成，检查候选正文后接受。</li>
+              </ol>
+            </section>
+
+            <section>
+              <h3>必须做什么</h3>
+              <ul>
+                <li>配置 LLM。</li>
+                <li>导入小说。</li>
+                <li>维护全书摘要，最多 2000 字。</li>
+                <li>续写前选择当前章节。</li>
+                <li>生成后检查候选正文，再接受写入。</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3>可选但建议</h3>
+              <ul>
+                <li>检查章节切分是否正确。</li>
+                <li>给最近几章和关键章节补章节摘要。</li>
+                <li>在知识库里记录重要角色、地点、势力和世界观规则。</li>
+                <li>填写写作规则，例如视角、文风、禁忌和节奏。</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3>导入与预览</h3>
+              <p>导入只做本地章节切分，不会调用 LLM。全书摘要会稳定进入续写上下文；章节摘要会帮助模型理解最近剧情。手动编辑摘要会自动保存。</p>
+              <p>如果还没有全书摘要，建议先去 <a href="https://chat.deepseek.com/" target="_blank" rel="noreferrer">DeepSeek Chat</a> 上传或粘贴小说文本，让它生成一版全书摘要，再粘贴到这里。之后再用 <strong>AI 更新全书摘要</strong> 做增量更新。</p>
+            </section>
+
+            <section>
+              <h3>续写</h3>
+              <p>可以选择在原章节末尾续写，也可以新增一章。生成内容会先进入候选正文，不会自动写入小说；确认满意后再接受。</p>
+            </section>
+
+            <section>
+              <h3>本次会发送给 LLM 的上下文</h3>
+              <p>续写时会发送：本次续写要求、最近约 5000 字原文、全书摘要、最近章节摘要、相关知识库和写作规则。不会发送整本书全文。</p>
+            </section>
+
+            <section>
+              <h3>常见问题</h3>
+              <p><strong>会全文总结吗？</strong> 不会。AI 更新全书摘要只使用旧摘要和最近原文。如果全书摘要为空，工具会要求你先手动输入一版摘要。</p>
+              <p><strong>章节摘要会处理整本书吗？</strong> 不会，只发送当前章节。</p>
+              <p><strong>思考模型的 think 内容怎么办？</strong> <code>&lt;think&gt;...&lt;/think&gt;</code> 会被过滤，不会写入正文或摘要。</p>
+              <p><strong>数据保存在哪里？</strong> 保存在当前浏览器本地。清理浏览器数据会丢失项目。</p>
+            </section>
+          </div>
+        </section>
+
+      </main>
+    </div>
+    <dialog id="textEditorDialog" class="text-editor-dialog">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2 id="textEditorTitle">放大编辑</h2>
+          <button id="closeTextEditorButton" class="ghost" value="cancel">关闭</button>
+        </div>
+        <textarea id="expandedTextEditor"></textarea>
+        <div class="button-row dialog-actions">
+          <button id="applyTextEditorButton" value="default">应用</button>
+          <button class="ghost" value="cancel">取消</button>
+        </div>
+      </form>
+    </dialog>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
