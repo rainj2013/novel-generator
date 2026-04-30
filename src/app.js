@@ -251,7 +251,6 @@ async function generateSelectedSummary() {
       config,
       prompt,
       systemPrompt: "你是一名长篇小说章节摘要助手。只输出摘要正文，不输出思考过程、标题或解释。",
-      maxTokens: 700,
       temperature: 0.3
     }
   });
@@ -314,7 +313,6 @@ async function updateStorySummary() {
       config,
       prompt,
       systemPrompt: "你是一名长篇小说剧情梗概维护助手。只输出新版梗概正文，不输出思考过程、标题或解释。",
-      maxTokens: 900,
       temperature: 0.3
     }
   });
