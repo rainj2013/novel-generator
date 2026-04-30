@@ -25,6 +25,23 @@ npm install
 npm start
 ```
 
+## 打包
+
+打 Windows 安装包：
+
+```bash
+npm install
+npm run dist:win
+```
+
+打 Windows 免安装便携版：
+
+```bash
+npm run dist:win:portable
+```
+
+构建结果会输出到 `dist/`。如果在 Linux 上打 Windows 包，需要本机已安装 Wine 等 `electron-builder` 依赖。
+
 ## 最短使用流程
 
 必须做的步骤只有三个：
