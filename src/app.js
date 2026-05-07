@@ -16,6 +16,7 @@ const STORAGE_KEY = "novel-context-manager:v1";
 const LLM_CONFIG_KEY = "novel-context-manager:llm-config:v1";
 const SIDEBAR_COLLAPSED_KEY = "novel-context-manager:sidebar-collapsed";
 const STORY_SUMMARY_LIMIT = 2000;
+const DEFAULT_MAX_TOKENS = 128000;
 const DEFAULT_SYSTEM_PROMPT = "你是一名长篇小说续写助手。严格保持人物、设定、视角、文风和节奏一致；只输出可直接追加到正文的小说正文，不要解释上下文，不要列提纲。";
 
 const state = {
@@ -493,7 +494,7 @@ async function callChatCompletionStream(config, prompt, { signal, onDelta, syste
     body: JSON.stringify({
       model: config.model,
       temperature: Number(temperature ?? config.temperature ?? 0.8),
-      max_tokens: Number(maxTokens ?? config.maxTokens ?? 1800),
+      max_tokens: Number(maxTokens ?? config.maxTokens ?? DEFAULT_MAX_TOKENS),
       stream: true,
       messages: [
         { role: "system", content: systemPrompt || config.systemPrompt || DEFAULT_SYSTEM_PROMPT },
@@ -672,7 +673,7 @@ function saveLlmConfigFromForm(showStatus = true) {
     model: els.llmModel.value.trim(),
     apiKey: els.llmApiKey.value.trim(),
     temperature: Number(els.llmTemperature.value || 0.8),
-    maxTokens: Number(els.llmMaxTokens.value || 1800),
+    maxTokens: Number(els.llmMaxTokens.value || DEFAULT_MAX_TOKENS),
     systemPrompt: els.llmSystemPrompt.value.trim() || DEFAULT_SYSTEM_PROMPT
   };
   localStorage.setItem(LLM_CONFIG_KEY, JSON.stringify(state.llmConfig));
@@ -685,7 +686,7 @@ function loadLlmConfig() {
     model: "deepseek-chat",
     apiKey: "",
     temperature: 0.8,
-    maxTokens: 1800,
+    maxTokens: DEFAULT_MAX_TOKENS,
     systemPrompt: DEFAULT_SYSTEM_PROMPT
   };
   const raw = localStorage.getItem(LLM_CONFIG_KEY);
@@ -750,7 +751,7 @@ function renderLlmConfig() {
   els.llmModel.value = state.llmConfig.model || "";
   els.llmApiKey.value = state.llmConfig.apiKey || "";
   els.llmTemperature.value = state.llmConfig.temperature ?? 0.8;
-  els.llmMaxTokens.value = state.llmConfig.maxTokens ?? 1800;
+  els.llmMaxTokens.value = state.llmConfig.maxTokens ?? DEFAULT_MAX_TOKENS;
   els.llmSystemPrompt.value = state.llmConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT;
 }
 
