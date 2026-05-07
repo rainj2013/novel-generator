@@ -518,6 +518,23 @@ select:focus {
   padding: 12px;
 }
 
+.history-panel {
+  margin-top: 18px;
+}
+
+.history-row {
+  display: grid;
+  gap: 8px;
+}
+
+.history-row p {
+  margin: 0;
+  color: #363a3e;
+  line-height: 1.55;
+  max-height: 180px;
+  overflow: auto;
+}
+
 .danger-zone {
   border: 1px solid #e5beb5;
   border-radius: 8px;

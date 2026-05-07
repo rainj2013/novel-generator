@@ -103,6 +103,7 @@ function bindEvents() {
   els.projectTitle.addEventListener("input", () => {
     state.project.title = els.projectTitle.value.trim() || "未命名小说";
     state.project.updatedAt = new Date().toISOString();
+    persistProject();
   });
   els.storySummary.addEventListener("input", () => {
     state.project.storySummary = trimToLimit(els.storySummary.value, STORY_SUMMARY_LIMIT);
@@ -202,6 +203,7 @@ function updateSelectedChapter() {
   renderStats();
   renderChapterList();
   renderChapterSelect();
+  persistProject();
 }
 
 async function generateSelectedSummary() {
