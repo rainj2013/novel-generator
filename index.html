@@ -35,6 +35,7 @@
         </div>
         <nav class="nav-tabs" aria-label="工作区">
           <button class="active" data-tab="organize">导入与预览</button>
+          <button data-tab="reader">全文阅读</button>
           <button data-tab="context">续写</button>
           <button data-tab="knowledge">知识库</button>
           <button data-tab="settings">LLM 配置</button>
@@ -98,6 +99,22 @@
             <p>清空当前项目会删除浏览器里保存的章节、正文、摘要和生成记录，不会删除原始 TXT/MD 文件，也不会清空 LLM 配置。</p>
             <button id="clearProjectButton" class="danger">清空当前项目</button>
           </details>
+        </section>
+
+        <section id="reader" class="panel">
+          <div class="section-head">
+            <h2>全文阅读</h2>
+            <span id="readerStatus">尚未导入</span>
+          </div>
+          <div class="reader-layout">
+            <aside class="reader-toc-panel">
+              <label class="stacked">快速跳转
+                <select id="readerChapterSelect"></select>
+              </label>
+              <div id="readerChapterList" class="reader-chapter-list"></div>
+            </aside>
+            <section id="readerContent" class="reader-content" aria-label="小说全文"></section>
+          </div>
         </section>
 
         <section id="knowledge" class="panel">
@@ -243,6 +260,11 @@
             <section>
               <h3>续写</h3>
               <p>可以选择在原章节末尾续写，也可以新增一章。生成内容会先进入候选正文，不会自动写入小说；确认满意后再接受。</p>
+            </section>
+
+            <section>
+              <h3>全文阅读</h3>
+              <p>全文阅读会按章节连续展示小说正文，可通过章节下拉框或目录快速跳转到指定章节。</p>
             </section>
 
             <section>

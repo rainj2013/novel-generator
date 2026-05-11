@@ -338,7 +338,8 @@ select:focus {
 .chapter-list,
 .knowledge-list,
 .history-list,
-.context-preview {
+.context-preview,
+.reader-chapter-list {
   display: grid;
   gap: 10px;
 }
@@ -396,6 +397,98 @@ select:focus {
 .badge.ready {
   background: #e3f2dc;
   color: #356a25;
+}
+
+.reader-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.32fr) minmax(520px, 0.68fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.reader-toc-panel {
+  position: sticky;
+  top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 12px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+.reader-toc-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfbf8;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 10px;
+  text-align: left;
+}
+
+.reader-toc-item:hover,
+.reader-toc-item.active {
+  border-color: #7fb6ae;
+  background: var(--soft);
+  color: var(--accent-strong);
+}
+
+.reader-toc-item strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-toc-item small {
+  color: var(--muted);
+}
+
+.reader-content {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 28px clamp(18px, 4vw, 54px);
+}
+
+.reader-chapter {
+  scroll-margin-top: 24px;
+  max-width: 860px;
+  margin: 0 auto;
+  padding-bottom: 42px;
+}
+
+.reader-chapter + .reader-chapter {
+  border-top: 1px solid var(--line);
+  padding-top: 34px;
+}
+
+.reader-chapter h3 {
+  margin: 0 0 20px;
+  font-size: 24px;
+  line-height: 1.35;
+}
+
+.reader-chapter p {
+  margin: 0;
+  color: #2d3135;
+  font-size: 18px;
+  line-height: 2;
+  white-space: normal;
+}
+
+.reader-empty {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  padding: 16px;
+  line-height: 1.6;
 }
 
 .stacked {
@@ -672,7 +765,8 @@ select:focus {
 
 @media (max-width: 980px) {
   .app-shell,
-  .split-layout {
+  .split-layout,
+  .reader-layout {
     grid-template-columns: 1fr;
   }
 
@@ -687,5 +781,18 @@ select:focus {
 
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+
+  .reader-toc-panel {
+    position: static;
+    max-height: 320px;
+  }
+
+  .reader-content {
+    padding: 22px 16px;
+  }
+
+  .reader-chapter p {
+    font-size: 16px;
   }
 }

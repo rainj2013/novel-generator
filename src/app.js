@@ -53,6 +53,10 @@ const els = {
   summaryCount: document.querySelector("#summaryCount"),
   splitStatus: document.querySelector("#splitStatus"),
   chapterList: document.querySelector("#chapterList"),
+  readerStatus: document.querySelector("#readerStatus"),
+  readerChapterSelect: document.querySelector("#readerChapterSelect"),
+  readerChapterList: document.querySelector("#readerChapterList"),
+  readerContent: document.querySelector("#readerContent"),
   chapterTitle: document.querySelector("#chapterTitle"),
   chapterSummary: document.querySelector("#chapterSummary"),
   chapterBody: document.querySelector("#chapterBody"),
@@ -129,6 +133,7 @@ function bindEvents() {
   els.draftSummaryButton.addEventListener("click", generateSelectedSummary);
   els.stopChapterSummaryButton.addEventListener("click", stopGeneration);
   els.addKnowledgeButton?.addEventListener("click", addKnowledgeItem);
+  els.readerChapterSelect.addEventListener("change", () => jumpToReaderChapter(els.readerChapterSelect.value));
   els.currentChapterSelect.addEventListener("change", () => {
     state.project.currentChapterId = els.currentChapterSelect.value;
     state.selectedChapterId = els.currentChapterSelect.value;
@@ -178,6 +183,9 @@ function switchTab(tabId) {
     renderChapterSelect();
     buildAndRenderContext();
   }
+  if (tabId === "reader") {
+    renderReader();
+  }
 }
 
 async function handleFileImport(event) {
@@ -207,6 +215,7 @@ function updateSelectedChapter() {
   renderStats();
   renderChapterList();
   renderChapterSelect();
+  renderReader();
   persistProject();
 }
 
@@ -791,6 +800,7 @@ function render() {
   renderStats();
   renderChapterList();
   renderSelectedChapter();
+  renderReader();
   renderKnowledge();
   renderChapterSelect();
   renderContext();
@@ -840,6 +850,71 @@ function renderChapterList() {
       renderSelectedChapter();
     });
   });
+}
+
+function renderReader() {
+  const chapters = state.project.chapters || [];
+  els.readerStatus.textContent = chapters.length
+    ? `${chapters.length.toLocaleString("zh-CN")} 章，${chapters.reduce((sum, chapter) => sum + (chapter.charCount || 0), 0).toLocaleString("zh-CN")} 字`
+    : "尚未导入";
+
+  els.readerChapterSelect.innerHTML = chapters.length
+    ? chapters.map((chapter) => (
+      `<option value="${chapter.id}" ${chapter.id === state.selectedChapterId ? "selected" : ""}>${chapter.order}. ${escapeHtml(chapter.title)}</option>`
+    )).join("")
+    : `<option value="">暂无章节</option>`;
+  els.readerChapterSelect.disabled = chapters.length === 0;
+
+  els.readerChapterList.innerHTML = chapters.length
+    ? chapters.map((chapter) => `
+      <button class="reader-toc-item ${chapter.id === state.selectedChapterId ? "active" : ""}" data-id="${chapter.id}" type="button">
+        <strong>${escapeHtml(chapter.order)}. ${escapeHtml(chapter.title)}</strong>
+        <small>${(chapter.charCount || 0).toLocaleString("zh-CN")} 字</small>
+      </button>
+    `).join("")
+    : `<article class="reader-empty">导入 TXT / MD 后可在这里阅读全文。</article>`;
+
+  els.readerContent.innerHTML = chapters.length
+    ? chapters.map((chapter) => `
+      <article id="${readerChapterDomId(chapter.id)}" class="reader-chapter" data-id="${chapter.id}">
+        <h3>${escapeHtml(chapter.title)}</h3>
+        <div class="reader-body">${formatReaderBody(chapter.body)}</div>
+      </article>
+    `).join("")
+    : `<article class="reader-empty">暂无正文。</article>`;
+
+  els.readerChapterList.querySelectorAll(".reader-toc-item").forEach((button) => {
+    button.addEventListener("click", () => jumpToReaderChapter(button.dataset.id));
+  });
+}
+
+function jumpToReaderChapter(chapterId) {
+  if (!chapterId) return;
+  state.selectedChapterId = chapterId;
+  els.readerChapterSelect.value = chapterId;
+  renderChapterList();
+  renderSelectedChapter();
+  renderReaderTocActive();
+  document.querySelector(`#${readerChapterDomId(chapterId)}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderReaderTocActive() {
+  els.readerChapterList.querySelectorAll(".reader-toc-item").forEach((button) => {
+    button.classList.toggle("active", button.dataset.id === state.selectedChapterId);
+  });
+}
+
+function readerChapterDomId(chapterId) {
+  return `reader-chapter-${String(chapterId || "").replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
+function formatReaderBody(body) {
+  const text = String(body || "").trim();
+  if (!text) return "<p>本章暂无正文。</p>";
+  return text
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${escapeHtml(paragraph.trim()).replace(/\n/g, "<br>")}</p>`)
+    .join("");
 }
 
 function renderSelectedChapter() {
