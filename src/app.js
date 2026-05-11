@@ -1,9 +1,11 @@
 import {
   acceptGeneration,
   acceptGenerationAsNewChapter,
+  buildStorySummaryFromChapterSummariesPrompt,
   buildContext,
   buildPrompt,
   countTextChars,
+  collectChapterSummaries,
   createProject,
   cryptoSafeId,
   createThinkFilter,
@@ -44,6 +46,7 @@ const els = {
   projectTitle: document.querySelector("#projectTitle"),
   clearProjectButton: document.querySelector("#clearProjectButton"),
   storySummary: document.querySelector("#storySummary"),
+  generateBookSummaryButton: document.querySelector("#generateBookSummaryButton"),
   updateSummaryButton: document.querySelector("#updateSummaryButton"),
   stopSummaryButton: document.querySelector("#stopSummaryButton"),
   organizeStatus: document.querySelector("#organizeStatus"),
@@ -114,6 +117,7 @@ function bindEvents() {
     renderStats();
     persistProject();
   });
+  els.generateBookSummaryButton.addEventListener("click", generateStorySummaryFromChapterSummaries);
   els.updateSummaryButton.addEventListener("click", updateStorySummary);
   els.stopSummaryButton.addEventListener("click", stopGeneration);
   els.chapterTitle.addEventListener("input", updateSelectedChapter);
@@ -321,6 +325,57 @@ async function updateStorySummary() {
   });
 }
 
+async function generateStorySummaryFromChapterSummaries() {
+  if (state.isGenerating) return;
+  if (!state.project.chapters.length) {
+    setStatus("organize", "请先导入小说。", true);
+    return;
+  }
+  const chapterSummaries = collectChapterSummaries(state.project);
+  if (!chapterSummaries.length) {
+    setStatus("organize", "请先填写或生成至少一个章节摘要。", true);
+    return;
+  }
+  const config = prepareLlmConfigOrSwitch();
+  if (!config) return;
+
+  const prompt = buildStorySummaryFromChapterSummariesPrompt(state.project, { limit: STORY_SUMMARY_LIMIT });
+  const previousStorySummary = state.project.storySummary || "";
+  let storySummaryStarted = false;
+  await runStreamingAiTask({
+    statusTarget: "organize",
+    workingMessage: `正在调用 LLM 根据 ${chapterSummaries.length} 个章节摘要生成全书摘要...`,
+    doneMessage: "已根据章节摘要生成全书摘要。",
+    onDelta: (delta) => {
+      if (!storySummaryStarted) {
+        els.storySummary.value = "";
+        storySummaryStarted = true;
+      }
+      els.storySummary.value = trimToLimit(els.storySummary.value + delta, STORY_SUMMARY_LIMIT);
+      state.project.storySummary = els.storySummary.value;
+      els.storySummary.scrollTop = els.storySummary.scrollHeight;
+      renderStats();
+    },
+    onDone: () => {
+      state.project.storySummary = trimToLimit(els.storySummary.value.trim(), STORY_SUMMARY_LIMIT);
+      els.storySummary.value = state.project.storySummary;
+      persistProject();
+      renderStats();
+    },
+    onError: () => {
+      state.project.storySummary = previousStorySummary;
+      els.storySummary.value = previousStorySummary;
+      renderStats();
+    },
+    request: {
+      config,
+      prompt,
+      systemPrompt: "你是一名长篇小说全书梗概整理助手。只根据用户提供的章节摘要输出全书摘要，不输出思考过程、标题或解释。",
+      temperature: 0.3
+    }
+  });
+}
+
 function addKnowledgeItem() {
   state.project.knowledgeItems.push({
     id: cryptoSafeId("knowledge"),
@@ -416,6 +471,7 @@ function setGeneratingState(isGenerating) {
   els.stopGenerationButton.disabled = !isGenerating;
   els.acceptGenerationButton.disabled = isGenerating;
   els.buildContextButton.disabled = isGenerating;
+  els.generateBookSummaryButton.disabled = isGenerating;
   els.updateSummaryButton.disabled = isGenerating;
   els.stopSummaryButton.disabled = !isGenerating;
   els.draftSummaryButton.disabled = isGenerating || !getSelectedChapter();

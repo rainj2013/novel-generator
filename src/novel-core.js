@@ -179,6 +179,28 @@ export function updateStorySummaryDraft(oldSummary = "", recentContent = "") {
   return trimToLimit(merged, STORY_SUMMARY_LIMIT);
 }
 
+export function collectChapterSummaries(project) {
+  return (project?.chapters || [])
+    .filter((chapter) => String(chapter.summary || "").trim())
+    .map((chapter) => ({
+      id: chapter.id,
+      order: chapter.order,
+      title: chapter.title,
+      summary: String(chapter.summary || "").trim()
+    }));
+}
+
+export function buildStorySummaryFromChapterSummariesPrompt(project, options = {}) {
+  const limit = options.limit || STORY_SUMMARY_LIMIT;
+  const chapterSummaries = collectChapterSummaries(project);
+  return [
+    "请根据以下章节摘要，生成一版全书剧情进度梗概。",
+    `要求：${limit}个中文字符以内；按故事发生顺序整合，不要逐章罗列；重点写清主线推进、主要矛盾、人物关系变化、当前目标、关键线索和未解伏笔；只输出梗概正文，不要标题、解释或项目符号。`,
+    `作品名：${project?.title || "未命名小说"}`,
+    `章节摘要：\n${chapterSummaries.map(formatChapterSummary).join("\n\n") || "暂无"}`
+  ].join("\n\n");
+}
+
 export function extractKeywords({ recentText = "", chapters = [], knowledgeItems = [], currentChapterId = null } = {}) {
   const keywords = new Set();
   const source = `${recentText}\n${chapters.map((chapter) => `${chapter.title}\n${chapter.summary}`).join("\n")}`;

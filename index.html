@@ -53,6 +53,7 @@
               <h2>全书摘要</h2>
             </div>
             <div class="summary-actions">
+              <button id="generateBookSummaryButton" class="ghost">AI 汇总章节摘要</button>
               <button id="updateSummaryButton" class="ghost">AI 更新全书摘要</button>
               <button id="stopSummaryButton" class="danger" disabled>中断</button>
               <span id="summaryCount">0 / 2000</span>
@@ -236,7 +237,7 @@
             <section>
               <h3>导入与预览</h3>
               <p>导入只做本地章节切分，不会调用 LLM。全书摘要会稳定进入续写上下文；章节摘要会帮助模型理解最近剧情。手动编辑摘要会自动保存。</p>
-              <p>如果还没有全书摘要，建议先去 <a href="https://chat.deepseek.com/" target="_blank" rel="noreferrer">DeepSeek Chat</a> 上传或粘贴小说文本，让它生成一版全书摘要，再粘贴到这里。之后再用 <strong>AI 更新全书摘要</strong> 做增量更新。</p>
+              <p>如果已经给章节补了摘要，可以用 <strong>AI 汇总章节摘要</strong> 生成一版全书摘要；之后再用 <strong>AI 更新全书摘要</strong> 做增量更新。</p>
             </section>
 
             <section>
@@ -251,7 +252,7 @@
 
             <section>
               <h3>常见问题</h3>
-              <p><strong>会全文总结吗？</strong> 不会。AI 更新全书摘要只使用旧摘要和最近原文。如果全书摘要为空，工具会要求你先手动输入一版摘要。</p>
+              <p><strong>会全文总结吗？</strong> 不会。AI 汇总章节摘要只发送已有章节摘要；AI 更新全书摘要只使用旧摘要和最近原文。</p>
               <p><strong>章节摘要会处理整本书吗？</strong> 不会，只发送当前章节。</p>
               <p><strong>思考模型的 think 内容怎么办？</strong> <code>&lt;think&gt;...&lt;/think&gt;</code> 会被过滤，不会写入正文或摘要。</p>
               <p><strong>数据保存在哪里？</strong> 保存在当前浏览器本地。清理浏览器数据会丢失项目。</p>

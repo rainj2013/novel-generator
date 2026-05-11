@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import {
   acceptGeneration,
   acceptGenerationAsNewChapter,
+  buildStorySummaryFromChapterSummariesPrompt,
   buildContext,
   buildPrompt,
+  collectChapterSummaries,
   createProject,
   serializeProjectToTxt,
   splitNovel,
@@ -64,6 +66,21 @@ run("story summary draft uses old summary plus recent content and stays within 2
   assert.match(summary, /旧梗概/);
   assert.match(summary, /最近进展/);
   assert.ok(summary.length <= 2000);
+});
+
+run("book summary prompt uses chapter summaries without chapter bodies", () => {
+  const chapters = splitNovel("第1章 初见\n林舟抵达青石镇，正文不应进入全书摘要提示。\n\n第2章 风起\n沈月发现密信。");
+  chapters[0].summary = "林舟抵达青石镇，发现玉佩线索。";
+  chapters[1].summary = "沈月发现密信，判断玄都内有内应。";
+  const project = createProject("测试书", chapters);
+  const chapterSummaries = collectChapterSummaries(project);
+  const prompt = buildStorySummaryFromChapterSummariesPrompt(project);
+
+  assert.equal(chapterSummaries.length, 2);
+  assert.match(prompt, /根据以下章节摘要/);
+  assert.match(prompt, /林舟抵达青石镇/);
+  assert.match(prompt, /沈月发现密信/);
+  assert.ok(!prompt.includes("正文不应进入全书摘要提示"));
 });
 
 run("context includes stable core sources and no full old chapter body", () => {
