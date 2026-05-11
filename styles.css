@@ -403,17 +403,16 @@ select:focus {
   display: grid;
   grid-template-columns: minmax(240px, 0.32fr) minmax(520px, 0.68fr);
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
+  height: calc(100vh - 128px);
+  min-height: 520px;
 }
 
 .reader-toc-panel {
-  position: sticky;
-  top: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
   padding: 12px;
-  max-height: calc(100vh - 120px);
   overflow: auto;
 }
 
@@ -454,6 +453,7 @@ select:focus {
   border-radius: 8px;
   background: var(--panel);
   padding: 28px clamp(18px, 4vw, 54px);
+  overflow: auto;
 }
 
 .reader-chapter {
@@ -768,6 +768,8 @@ select:focus {
   .split-layout,
   .reader-layout {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
   }
 
   .sidebar {
@@ -784,11 +786,12 @@ select:focus {
   }
 
   .reader-toc-panel {
-    position: static;
     max-height: 320px;
   }
 
   .reader-content {
+    max-height: none;
+    overflow: visible;
     padding: 22px 16px;
   }
 
