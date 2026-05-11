@@ -31,6 +31,8 @@ const state = {
   lastPrompt: "",
   generationController: null,
   isGenerating: false,
+  isReaderFocusMode: false,
+  readerScrollFrame: null,
   thinkFilter: createThinkFilter()
 };
 
@@ -54,6 +56,7 @@ const els = {
   splitStatus: document.querySelector("#splitStatus"),
   chapterList: document.querySelector("#chapterList"),
   readerStatus: document.querySelector("#readerStatus"),
+  readerFocusButton: document.querySelector("#readerFocusButton"),
   readerChapterSelect: document.querySelector("#readerChapterSelect"),
   readerChapterList: document.querySelector("#readerChapterList"),
   readerContent: document.querySelector("#readerContent"),
@@ -134,6 +137,8 @@ function bindEvents() {
   els.stopChapterSummaryButton.addEventListener("click", stopGeneration);
   els.addKnowledgeButton?.addEventListener("click", addKnowledgeItem);
   els.readerChapterSelect.addEventListener("change", () => jumpToReaderChapter(els.readerChapterSelect.value));
+  els.readerFocusButton.addEventListener("click", toggleReaderFocusMode);
+  els.readerContent.addEventListener("scroll", handleReaderScroll);
   els.currentChapterSelect.addEventListener("change", () => {
     state.project.currentChapterId = els.currentChapterSelect.value;
     state.selectedChapterId = els.currentChapterSelect.value;
@@ -185,6 +190,9 @@ function switchTab(tabId) {
   }
   if (tabId === "reader") {
     renderReader();
+  } else if (state.isReaderFocusMode) {
+    state.isReaderFocusMode = false;
+    renderReaderFocusMode();
   }
 }
 
@@ -805,6 +813,7 @@ function render() {
   renderChapterSelect();
   renderContext();
   renderHistory();
+  renderReaderFocusMode();
   enhanceTextareas();
 }
 
@@ -886,22 +895,72 @@ function renderReader() {
   els.readerChapterList.querySelectorAll(".reader-toc-item").forEach((button) => {
     button.addEventListener("click", () => jumpToReaderChapter(button.dataset.id));
   });
+  renderReaderTocActive();
 }
 
 function jumpToReaderChapter(chapterId) {
   if (!chapterId) return;
+  setReaderActiveChapter(chapterId, { scrollToc: false });
+  const target = els.readerContent.querySelector(`#${readerChapterDomId(chapterId)}`);
+  if (target) {
+    els.readerContent.scrollTo({ top: target.offsetTop, behavior: "smooth" });
+  }
+}
+
+function handleReaderScroll() {
+  if (state.readerScrollFrame) return;
+  state.readerScrollFrame = requestAnimationFrame(() => {
+    state.readerScrollFrame = null;
+    const chapterId = findVisibleReaderChapterId();
+    if (chapterId) setReaderActiveChapter(chapterId, { scrollToc: true });
+  });
+}
+
+function findVisibleReaderChapterId() {
+  const chapters = [...els.readerContent.querySelectorAll(".reader-chapter")];
+  if (!chapters.length) return null;
+  const scrollTop = els.readerContent.scrollTop;
+  const threshold = 80;
+  let current = chapters[0];
+  for (const chapter of chapters) {
+    if (chapter.offsetTop - threshold <= scrollTop) {
+      current = chapter;
+    } else {
+      break;
+    }
+  }
+  return current.dataset.id;
+}
+
+function setReaderActiveChapter(chapterId, { scrollToc = false } = {}) {
+  if (!chapterId || state.selectedChapterId === chapterId) return;
   state.selectedChapterId = chapterId;
-  els.readerChapterSelect.value = chapterId;
+  if (els.readerChapterSelect.value !== chapterId) {
+    els.readerChapterSelect.value = chapterId;
+  }
   renderChapterList();
   renderSelectedChapter();
   renderReaderTocActive();
-  document.querySelector(`#${readerChapterDomId(chapterId)}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (scrollToc) {
+    els.readerChapterList.querySelector(`[data-id="${cssEscape(chapterId)}"]`)?.scrollIntoView({ block: "nearest" });
+  }
 }
 
 function renderReaderTocActive() {
   els.readerChapterList.querySelectorAll(".reader-toc-item").forEach((button) => {
     button.classList.toggle("active", button.dataset.id === state.selectedChapterId);
   });
+}
+
+function toggleReaderFocusMode() {
+  state.isReaderFocusMode = !state.isReaderFocusMode;
+  renderReaderFocusMode();
+}
+
+function renderReaderFocusMode() {
+  els.appShell.classList.toggle("reader-focus-mode", state.isReaderFocusMode);
+  els.readerFocusButton.textContent = state.isReaderFocusMode ? "退出全屏" : "内容全屏";
+  els.readerFocusButton.setAttribute("aria-pressed", String(state.isReaderFocusMode));
 }
 
 function readerChapterDomId(chapterId) {
@@ -915,6 +974,11 @@ function formatReaderBody(body) {
     .split(/\n{2,}/)
     .map((paragraph) => `<p>${escapeHtml(paragraph.trim()).replace(/\n/g, "<br>")}</p>`)
     .join("");
+}
+
+function cssEscape(value) {
+  if (window.CSS?.escape) return CSS.escape(value);
+  return String(value || "").replace(/["\\]/g, "\\$&");
 }
 
 function renderSelectedChapter() {

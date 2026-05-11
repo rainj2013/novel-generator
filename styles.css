@@ -79,6 +79,10 @@ button:disabled {
   grid-template-columns: 56px minmax(0, 1fr);
 }
 
+.app-shell.reader-focus-mode {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
 .sidebar {
   border-right: 1px solid var(--line);
   background: #fcfcf9;
@@ -116,12 +120,23 @@ button:disabled {
   align-items: center;
 }
 
+.app-shell.reader-focus-mode .sidebar {
+  padding: 12px;
+  align-items: center;
+}
+
 .app-shell.sidebar-collapsed .sidebar h1,
 .app-shell.sidebar-collapsed .file-drop,
 .app-shell.sidebar-collapsed .sidebar-actions,
 .app-shell.sidebar-collapsed .sidebar-note,
 .app-shell.sidebar-collapsed .stat-grid,
-.app-shell.sidebar-collapsed .nav-tabs {
+.app-shell.sidebar-collapsed .nav-tabs,
+.app-shell.reader-focus-mode .sidebar h1,
+.app-shell.reader-focus-mode .file-drop,
+.app-shell.reader-focus-mode .sidebar-actions,
+.app-shell.reader-focus-mode .sidebar-note,
+.app-shell.reader-focus-mode .stat-grid,
+.app-shell.reader-focus-mode .nav-tabs {
   display: none;
 }
 
@@ -406,6 +421,14 @@ select:focus {
   align-items: stretch;
   height: calc(100vh - 128px);
   min-height: 520px;
+}
+
+.app-shell.reader-focus-mode .reader-layout {
+  grid-template-columns: 1fr;
+}
+
+.app-shell.reader-focus-mode .reader-toc-panel {
+  display: none;
 }
 
 .reader-toc-panel {
